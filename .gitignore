@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+*.log
+*.session
+users.json
+*_users.json
+active_*signals.json
+app.zip

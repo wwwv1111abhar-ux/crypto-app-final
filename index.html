@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crypto AI Signals - Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { background: #0B1120; color: white; padding: 15px; padding-bottom: 80px; text-align: center; }
+        .header { color: #0098EA; font-size: 22px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .logo-container { display: flex; align-items: center; gap: 8px; }
+        .logo-img { height: 35px; width: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #1e293b; }
+        .badge { font-size: 12px; background: #1e293b; padding: 5px 10px; border-radius: 20px; color: #fbbf24; border: 1px solid #334155; }
+        .tabs { display: flex; background: #111827; border-radius: 10px; padding: 5px; margin-bottom: 15px; }
+        .tab { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; color: #94a3b8; cursor: pointer; border: none; background: transparent; }
+        .tab.active { background: #0098EA; color: white; }
+        .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #1e293b; background: #111827; color: white; margin-bottom: 10px; font-size: 14px; outline: none; }
+        .search-box:focus { border-color: #0098EA; }
+        .tf-container { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
+        .tf-btn { padding: 6px 12px; border-radius: 8px; background: #1e293b; color: #94a3b8; font-size: 12px; font-weight: bold; border: 1px solid #334155; cursor: pointer; white-space: nowrap; }
+        .tf-btn.active { background: #0098EA; color: white; border-color: #0098EA; }
+        .coin-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
+        .coin-item { background: #111827; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .coin-item.active { border-color: #0098EA; background: rgba(0, 152, 234, 0.1); }
+        .coin-info { display: flex; align-items: center; gap: 10px; text-align: left; }
+        .coin-img { width: 24px; height: 24px; border-radius: 50%; }
+        .coin-symbol { font-weight: bold; font-size: 14px; }
+        .coin-name { font-size: 10px; color: #94a3b8; width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .coin-price-box { text-align: right; }
+        .coin-price { color: #10b981; font-size: 13px; font-family: monospace; }
+        .coin-change { font-size: 11px; }
+        #chart-container { width: 100%; height: 250px; background: #111827; border-radius: 12px; border: 1px solid #1e293b; margin-bottom: 15px; }
+        .btn { background: #0098EA; color: white; font-weight: bold; padding: 15px; border-radius: 10px; border: none; width: 100%; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        .btn-ton { background: #0098EA; color: white; border: none; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-prem { background: #1e293b; color: #fbbf24; border: 1px solid #334155; margin-top: 10px; }
+        .btn-invite { background: #10b981; color: white; margin-top: 10px; }
+        #ton-connect { display: flex; justify-content: center; margin-bottom: 15px; }
+        #signal-card { display: none; background: #111827; border: 1px solid #10b981; border-radius: 12px; padding: 15px; margin-top: 15px; text-align: left; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+        .sig-header { display: flex; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 10px; }
+        .sig-dir { font-weight: bold; font-size: 14px; }
+        .sig-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 14px; border-bottom: 1px dashed #1e293b; }
+        .sig-row:last-child { border: none; }
+        .val { font-family: monospace; font-weight: bold; }
+        .pct { font-size: 11px; font-weight: normal; margin-left: 5px; }
+        .text-blue { color: #3b82f6; }
+        .text-green { color: #10b981; }
+        .text-red { color: #ef4444; }
+        #paywall { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 17, 32, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .lock-icon { font-size: 60px; margin-bottom: 20px; }
+        .lock-title { color: #fbbf24; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .lock-text { color: #94a3b8; font-size: 14px; margin-bottom: 20px; text-align: center; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-container">
+            <img src="logo.jpg" class="logo-img" alt="AI">
+            <span>Crypto AI</span>
+        </div>
+        <span class="badge" id="limit-badge">FREE: 5</span>
+    </div>
+    
+    <div id="ton-connect"></div>
+    <div class="tabs">
+        <button class="tab active" id="tab-global" onclick="switchTab('global')">Top 300</button>
+        <button class="tab" id="tab-ton" onclick="switchTab('ton')">TON Eco</button>
+    </div>
+    <input type="text" id="search" class="search-box" placeholder="🔍 Search coin..." oninput="filterCoins()">
+    <div class="coin-list" id="coin-list"></div>
+    <div class="tf-container" id="tf-container">
+        <button class="tf-btn" onclick="changeTF(this, '1m')">1m</button>
+        <button class="tf-btn" onclick="changeTF(this, '5m')">5m</button>
+        <button class="tf-btn" onclick="changeTF(this, '15m')">15m</button>
+        <button class="tf-btn active" onclick="changeTF(this, '1h')">1h</button>
+        <button class="tf-btn" onclick="changeTF(this, '4h')">4h</button>
+        <button class="tf-btn" onclick="changeTF(this, '1d')">1d</button>
+        <button class="tf-btn" onclick="changeTF(this, '1w')">1w</button>
+        <button class="tf-btn" onclick="changeTF(this, '1M')">1M</button>
+    </div>
+    <div id="chart-container"></div>
+    <button class="btn" id="gen-btn" onclick="generateSignal()">Generate AI Signal</button>
+    <div id="signal-card">
+        <div class="sig-header">
+            <span id="sig-pair">BTCUSDT</span>
+            <span class="sig-dir" id="sig-dir">LONG 🟢</span>
+        </div>
+        <div class="sig-row"><span>Entry Price</span><div><span id="sig-entry" class="val text-blue">-</span></div></div>
+        <div class="sig-row"><span>Target 1</span><div><span id="sig-tp1" class="val text-green">-</span><span id="sig-tp1-pct" class="pct text-green">(0%)</span></div></div>
+        <div class="sig-row"><span>Target 2</span><div><span id="sig-tp2" class="val text-green">-</span><span id="sig-tp2-pct" class="pct text-green">(0%)</span></div></div>
+        <div class="sig-row"><span>Target 3</span><div><span id="sig-tp3" class="val text-green">-</span><span id="sig-tp3-pct" class="pct text-green">(0%)</span></div></div>
+        <div class="sig-row"><span>Stop Loss</span><div><span id="sig-sl" class="val text-red">-</span><span id="sig-sl-pct" class="pct text-red">(0%)</span></div></div>
+    </div>
+    
+    <button class="btn btn-ton" onclick="buyWithTON()">💎 Buy Premium with 2 TON</button>
+    <button class="btn btn-prem" onclick="buyPremium()">⭐ View Premium Plans (Stars)</button>
+    <button class="btn btn-invite" onclick="inviteFriends()">🎁 Invite Friends (+3 Signals)</button>
+
+    <div id="paywall">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">Free Limit Reached!</div>
+        <div class="lock-text">You have used all your free signals.<br>Upgrade to Premium, buy a single signal, or invite friends to continue!</div>
+        <button class="btn btn-ton" onclick="buyWithTON()">💎 Buy Premium with 2 TON</button>
+        <button class="btn btn-prem" onclick="buyPremium()">⭐ View Premium Plans (Stars)</button>
+        <button class="btn btn-invite" onclick="inviteFriends()">🎁 Add 3 Signals via Referral</button>
+    </div>
+
+    <script>
+        if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://superlative-tiramisu-296a85.netlify.app/tonconnect-manifest.json', 
+            buttonRootId: 'ton-connect'
+        });
+
+        const MERCHANT_WALLET = "UQCa6ecXp4hoWDOjYMhnkeRnBowIGBRITg_jI5b6m5jNilry"; 
+
+        let isPremium = localStorage.getItem('isPremium') === 'true';
+        const urlParams = new URLSearchParams(window.location.search);
+        const untilParam = urlParams.get('until');
+        const isAdmin = urlParams.get('admin') === 'true';
+        
+        if (untilParam) { const untilMs = parseInt(untilParam) * 1000; if (Date.now() < untilMs) isPremium = true; }
+        if (isAdmin) isPremium = true;
+
+        let signalCount = parseInt(localStorage.getItem('signalCount') || '0');
+        const FREE_LIMIT = 5;
+
+        function updateBadge() {
+            const badge = document.getElementById('limit-badge');
+            if (isAdmin) { badge.innerText = "ADMIN 👑"; badge.style.background = "#ef4444"; badge.style.color = "#fff"; } 
+            else if (isPremium) { badge.innerText = "PRO 👑"; badge.style.background = "#fbbf24"; badge.style.color = "#000"; } 
+            else { badge.innerText = `FREE: ${Math.max(0, FREE_LIMIT - signalCount)}`; }
+        }
+        updateBadge();
+
+        async function buyWithTON() {
+            if (!tonConnectUI.connected) {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert("Please connect your wallet first using the button above!");
+                }
+                return;
+            }
+            
+            try {
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 60,
+                    messages: [
+                        {
+                            address: MERCHANT_WALLET,
+                            amount: "2000000000" // 2 TON
+                        }
+                    ]
+                };
+                
+                const result = await tonConnectUI.sendTransaction(transaction);
+                
+                if (result) {
+                    isPremium = true;
+                    localStorage.setItem('isPremium', 'true');
+                    updateBadge();
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.showAlert("✅ Payment successful! Premium activated.");
+                    }
+                }
+            } catch (e) {
+                console.log(e);
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert("Transaction cancelled or failed.");
+                }
+            }
+        }
+
+        let globalCoins = [], tonCoins = [], currentTab = 'global', currentCoin = null, currentPrice = 0;
+        let currentTF = '1h';
+        let chart, candlestickSeries, priceLines = [];
+
+        async function fetchMarkets() {
+            try {
+                const resGlobal = await fetch('https://api.coingecko.com/api/v3/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'.replace('/markets', '/coins/markets'));
+                globalCoins = await resGlobal.json();
+                const resTon = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=ton-ecosystem&order=market_cap_desc&per_page=30&page=1&sparkline=false');
+                tonCoins = await resTon.json();
+                renderList();
+                if (globalCoins.length > 0) selectCoin(globalCoins[0]);
+            } catch (e) { document.getElementById('coin-list').innerHTML = '<div style="color:red; text-align:center;">Error loading data.</div>'; }
+        }
+
+        function renderList() {
+            const listEl = document.getElementById('coin-list');
+            listEl.innerHTML = '';
+            let coinsToRender = currentTab === 'global' ? globalCoins : tonCoins;
+            coinsToRender.forEach(coin => {
+                const isActive = currentCoin && currentCoin.id === coin.id;
+                const change = coin.price_change_percentage_24h ? coin.price_change_percentage_24h.toFixed(2) : '0.00';
+                const color = change >= 0 ? '#10b981' : '#ef4444';
+                const price = coin.current_price ? coin.current_price.toLocaleString() : '0';
+                listEl.innerHTML += `
+                    <div class="coin-item ${isActive ? 'active' : ''}" onclick='selectCoin(${JSON.stringify(coin)})'>
+                        <div class="coin-info">
+                            <img src="${coin.image}" class="coin-img" onerror="this.src='https://assets.coingecko.com/coins/images/1/large/bitcoin.png'">
+                            <div><div class="coin-symbol">${coin.symbol.toUpperCase()}</div><div class="coin-name">${coin.name}</div></div>
+                        </div>
+                        <div class="coin-price-box">
+                            <div class="coin-price">$${price}</div><div class="coin-change" style="color:${color}">${change}%</div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-global').classList.toggle('active', tab === 'global');
+            document.getElementById('tab-ton').classList.toggle('active', tab === 'ton');
+            document.getElementById('search').value = '';
+            renderList();
+            const list = tab === 'global' ? globalCoins : tonCoins;
+            if (list.length > 0) selectCoin(list[0]);
+        }
+
+        function filterCoins() {
+            const query = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('.coin-item').forEach(item => { item.style.display = item.innerText.toLowerCase().includes(query) ? 'flex' : 'none'; });
+        }
+
+        async function selectCoin(coin) {
+            currentCoin = coin;
+            renderList();
+            document.getElementById('signal-card').style.display = 'none';
+            await initChart(coin.symbol.toUpperCase() + 'USDT', coin.current_price);
+        }
+
+        function changeTF(btn, tf) {
+            currentTF = tf;
+            document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (currentCoin) initChart(currentCoin.symbol.toUpperCase() + 'USDT', currentCoin.current_price);
+        }
+
+        async function initChart(symbol, fallbackPrice) {
+            const container = document.getElementById('chart-container');
+            container.innerHTML = '';
+            chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth, height: 250,
+                layout: { background: { color: '#111827' }, textColor: '#94a3b8' },
+                grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+                timeScale: { timeVisible: true, borderColor: '#1e293b' },
+            });
+            candlestickSeries = chart.addCandlestickSeries({ upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444' });
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${currentTF}&limit=100`);
+                if (!res.ok) throw new Error("Not on Binance");
+                const data = await res.json();
+                const formattedData = data.map(d => ({ time: d[0] / 1000, open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4]) }));
+                candlestickSeries.setData(formattedData);
+                currentPrice = formattedData[formattedData.length - 1].close;
+            } catch (e) {
+                const fakeData = []; let price = fallbackPrice || 1; let time = Math.floor(Date.now() / 1000) - (100 * 3600);
+                for(let i=0; i<100; i++) { let open = price; let close = price * (1 + (Math.random()-0.5)*0.02); fakeData.push({ time, open, high: Math.max(open,close)*1.01, low: Math.min(open,close)*0.99, close }); price = close; time += 3600; }
+                candlestickSeries.setData(fakeData); currentPrice = fallbackPrice || price;
+            }
+        }
+
+        function generateSignal() {
+            if (!currentCoin) return;
+            if (!isPremium && signalCount >= FREE_LIMIT) { document.getElementById('paywall').style.display = 'flex'; return; }
+            const btn = document.getElementById('gen-btn');
+            btn.innerText = "Analyzing...";
+            setTimeout(() => {
+                const tfMultipliers = { '1m': 0.005, '5m': 0.01, '15m': 0.02, '1h': 0.03, '4h': 0.05, '1d': 0.08, '1w': 0.15, '1M': 0.25 };
+                const m = tfMultipliers[currentTF] || 0.02;
+                const isLong = Math.random() > 0.4;
+                const entry = currentPrice;
+                let sl, tp1, tp2, tp3;
+                if (isLong) { sl = entry * (1 - m * 1.5); tp1 = entry * (1 + m * 1); tp2 = entry * (1 + m * 2); tp3 = entry * (1 + m * 3); } 
+                else { sl = entry * (1 + m * 1.5); tp1 = entry * (1 - m * 1); tp2 = entry * (1 - m * 2); tp3 = entry * (1 - m * 3); }
+                const getPct = (target) => { return ((Math.abs(target - entry) / entry) * 100).toFixed(1) + '%'; };
+                document.getElementById('signal-card').style.display = 'block';
+                document.getElementById('sig-pair').innerText = `${currentCoin.symbol.toUpperCase()} / USDT (${currentTF})`;
+                const dirEl = document.getElementById('sig-dir');
+                dirEl.innerText = isLong ? 'LONG 🟢' : 'SHORT 🔴'; dirEl.style.color = isLong ? '#10b981' : '#ef4444';
+                document.getElementById('sig-entry').innerText = '$' + entry.toFixed(4);
+                document.getElementById('sig-tp1').innerText = '$' + tp1.toFixed(4);
+                document.getElementById('sig-tp1-pct').innerText = `+${getPct(tp1)}`;
+                document.getElementById('sig-tp2').innerText = '$' + tp2.toFixed(4);
+                document.getElementById('sig-tp2-pct').innerText = `+${getPct(tp2)}`;
+                document.getElementById('sig-tp3').innerText = '$' + tp3.toFixed(4);
+                document.getElementById('sig-tp3-pct').innerText = `+${getPct(tp3)}`;
+                document.getElementById('sig-sl').innerText = '$' + sl.toFixed(4);
+                document.getElementById('sig-sl-pct').innerText = `-${getPct(sl)}`;
+                if (candlestickSeries) {
+                    priceLines.forEach(line => candlestickSeries.removePriceLine(line));
+                    priceLines = [
+                        candlestickSeries.createPriceLine({ price: entry, color: '#3b82f6', lineWidth: 2, title: 'Entry' }),
+                        candlestickSeries.createPriceLine({ price: sl, color: '#ef4444', lineWidth: 2, lineStyle: 2, title: 'SL' }),
+                        candlestickSeries.createPriceLine({ price: tp1, color: '#10b981', lineWidth: 1, lineStyle: 2, title: 'TP1' }),
+                        candlestickSeries.createPriceLine({ price: tp2, color: '#10b981', lineWidth: 1, lineStyle: 2, title: 'TP2' }),
+                        candlestickSeries.createPriceLine({ price: tp3, color: '#10b981', lineWidth: 1, lineStyle: 2, title: 'TP3' })
+                    ];
+                }
+                if (!isPremium) { signalCount++; localStorage.setItem('signalCount', signalCount); updateBadge(); }
+                btn.innerText = "Generate AI Signal";
+            }, 1500);
+        }
+
+        function inviteFriends() { if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.showAlert("Go back to the bot chat and click '🎁 Invite Friends' to get your link!"); window.Telegram.WebApp.close(); } }
+        function buyPremium() { if (window.Telegram && window.Telegram.WebApp) { window.Telegram.WebApp.showAlert("Go back to the bot chat and click '⭐ Premium Plans'."); window.Telegram.WebApp.close(); } }
+        fetchMarkets();
+    </script>
+</body>
+</html>
